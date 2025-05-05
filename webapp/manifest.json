@@ -1,0 +1,79 @@
+{
+    "sap.app": {
+        "id": "com.seeql",
+        "type": "application",
+        "i18n": "i18n/i18n.properties",
+        "applicationVersion": {
+            "version": "1.0.0"
+        },
+        "title": "Fiori POC",
+        "sourceTemplate": {
+            "id": "@sap/ux-app-migrator:freestyle",
+            "version": "1.17.4",
+            "toolsId": "a51db2da-65fc-43a3-889b-dcdf3e23f23c"
+        }
+    },
+    "sap.ui": {
+        "technology": "UI5",
+        "icons": {
+            "icon": ""
+        }
+    },
+    "sap.ui5": {
+        "rootView": {
+            "viewName": "com.seeql.view.Main",
+            "type": "XML",
+            "async": true,
+            "id": "mainView"
+        },
+        "dependencies": {
+            "minUI5Version": "1.120.0",
+            "libs": {
+                "sap.m": {},
+                "sap.ui.core": {}
+            }
+        },
+        "contentDensities": {
+            "compact": true,
+            "cozy": true
+        },
+        "routing": {
+            "config": {
+                "routerClass": "sap.m.routing.Router",
+                "viewType": "XML",
+                "viewPath": "com.seeql.view",
+                "controlId": "app",
+                "controlAggregation": "pages",
+                "async": true
+            },
+            "routes": [
+                {
+                    "pattern": "",
+                    "name": "main",
+                    "target": "Main"
+                },
+                {
+                    "pattern": "iframe",
+                    "name": "iframe",
+                    "target": "Iframe"
+                },
+                {
+                    "pattern": "seeql",
+                    "name": "seeqlSAP",
+                    "target": "seeqlSAP"
+                }
+            ],
+            "targets": {
+                "Main": {
+                    "viewName": "Main"
+                },
+                "Iframe": {
+                    "viewName": "Iframe"
+                },
+                "seeqlSAP": {
+                    "viewName": "seeqlSAP"
+                }
+            }
+        }
+    }
+}

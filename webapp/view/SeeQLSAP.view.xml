@@ -1,0 +1,256 @@
+<mvc:View
+    controllerName="com.seeql.controller.seeqlSAP"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns:core="sap.ui.core"
+    xmlns:m="sap.m"
+>
+    <m:App>
+        <m:Page
+            showHeader="false"
+            class="noContentPadding"
+        >
+            <m:HBox
+                fitContainer="true"
+                renderType="Bare"
+            >
+                <!-- Sidebar -->
+                <m:VBox
+                    width="200px"
+                    class="sapUiSmallMargin sapUiContentPadding sapUiResponsiveMargin"
+                    justifyContent="SpaceBetween"
+                >
+                    <!-- Partie haute -->
+                    <m:VBox>
+                        <m:List headerText="Les plus recherchés">
+                            <m:StandardListItem title="Recherche 1" />
+                            <m:StandardListItem title="Recherche 2" />
+                            <m:StandardListItem title="Recherche 3" />
+                            <m:StandardListItem title="Recherche 4" />
+                        </m:List>
+                    </m:VBox>
+
+                    <!-- Partie basse -->
+                    <m:VBox class="linksAtBottom">
+                        <m:Toolbar design="Transparent">
+                            <m:Title
+                                text="Autres liens"
+                                level="H6"
+                            />
+                        </m:Toolbar>
+                        <m:Link text="Guide utilisateur" />
+                        <m:Link
+                            text="Dictionnaire"
+                            press=".onOpenDictionary"
+                        />
+                    </m:VBox>
+                </m:VBox>
+
+                <m:VBox
+                    width="100%"
+                    class="sapUiMediumMargin"
+                >
+                    <!-- Selecteur -->
+                    <m:Select
+                        width="200px"
+                        selectedKey="{/selectedUnivers}"
+                        items="{/universList}"
+                    >
+                        <core:Item
+                            key="{key}"
+                            text="{text}"
+                        />
+                    </m:Select>
+
+                    <m:HBox
+                        id="mainColumns"
+                        width="100%"
+                        class=""
+                    >
+                        <!-- Colonne gauche -->
+                        <m:VBox
+                            id="leftColumn"
+                            width="70%"
+                            class="sapUiSmallMargin"
+                        >
+                            <!-- Carte principale -->
+                            <m:Panel
+                                class="customCard alignLeft"
+                                backgroundDesign="Solid"
+                                headerText=""
+                            >
+                                <!-- Header logo + switch -->
+                                <m:HBox
+                                    justifyContent="SpaceBetween"
+                                    alignItems="Center"
+                                >
+                                    <m:Image
+                                        src="/img/Logos_seeql.svg"
+                                        height="70px"
+                                    />
+                                    <m:HBox alignItems="Center">
+                                        <m:Text text="Mode avancé" />
+                                        <m:Switch
+                                            id="advancedSwitch"
+                                            change="onModeChange"
+                                        />
+                                    </m:HBox>
+                                </m:HBox>
+
+                                <m:Text
+                                    text="Votre question"
+                                    class="sapUiSmallMarginTop sapUiTinyMarginBottom"
+                                />
+                                <m:TextArea
+                                    id="questionInput"
+                                    rows="4"
+                                    width="100%"
+                                    placeholder="Posez une question"
+                                />
+
+                                <m:HBox justifyContent="End">
+                                    <m:Button
+                                        icon="sap-icon://paper-plane"
+                                        type="Emphasized"
+                                        press="onSubmit"
+                                    />
+                                </m:HBox>
+                            </m:Panel>
+
+                            <!-- Bloc SQL -->
+                            <m:VBox
+                                id="responseSection"
+                                visible="false"
+                                class="sapUiSmallMarginTop resultSqlContainer"
+                            >
+                                <m:Title
+                                    text="Requête SQL proposée"
+                                    level="H5"
+                                />
+                                <m:Text
+                                    id="sqlOutput"
+                                    text=""
+                                    class="sapUiSmallMarginBottom sapUiCode"
+                                />
+                            </m:VBox>
+
+                            <!-- Bloc Table -->
+                            <m:VBox
+                                id="resultSection"
+                                visible="false"
+                                class="sapUiSmallMarginTop resultTableContainer "
+                            >
+                                <m:Title
+                                    text="Données issues de la requête (5 lignes)"
+                                    level="H5"
+                                />
+                                <m:Table
+                                    id="resultTable"
+                                    inset="false"
+                                    items="{/results}"
+                                >
+                                    <m:columns>
+                                        <m:Column>
+                                            <m:Text
+                                                text="GrLivArea - totalbsmtsf"
+                                            />
+                                        </m:Column>
+                                    </m:columns>
+                                    <m:items>
+                                        <m:ColumnListItem>
+                                            <m:cells>
+                                                <m:Text text="{value}" />
+                                            </m:cells>
+                                        </m:ColumnListItem>
+                                    </m:items>
+                                </m:Table>
+                                <m:HBox
+                                    justifyContent="Center"
+                                    class="sapUiSmallMarginTop"
+                                >
+                                    <m:Button
+                                        text="Voir plus"
+                                        type="Default"
+                                        press=".onLoadMoreResults"
+                                        id="btnLoadMore"
+                                    />
+                                </m:HBox>
+                            </m:VBox>
+                        </m:VBox>
+
+                        <!-- Colonne droite (mode avancé) -->
+                        <m:VBox
+                            id="rightColumn"
+                            width="30%"
+                            visible="true"
+                            class="sapUiSmallMargin customSqlCardSelect"
+                        >
+                            <m:Panel
+                                headerText="Édition de la requête"
+                                expandable="true"
+                                expanded="true"
+                                class=""
+                            >
+                                <m:VBox class="sapUiSmallMargin">
+                                    <m:Text
+                                        text="SELECT"
+                                        class="sapUiTinyMarginBottom"
+                                    />
+
+                                    <m:MultiComboBox
+                                        id="selectColumnsInput"
+                                        width="100%"
+                                        selectedKeys="{/selectedColumns}"
+                                        items="{ path: '/availableColumns' }"
+                                    >
+                                        <core:Item
+                                            key="{key}"
+                                            text="{text}"
+                                        />
+                                    </m:MultiComboBox>
+
+                                    <m:Text
+                                        text="FROM"
+                                        class="sapUiTinyMarginTop sapUiTinyMarginBottom"
+                                    />
+                                    <m:Text
+                                        text="immo"
+                                        class="sapUiTinyMarginBottom sapUiSmallMarginBegin"
+                                    />
+
+                                    <m:Button
+                                        text="Exécuter"
+                                        type="Emphasized"
+                                        press="onExecute"
+                                        class="sapUiTinyMarginTop sapUiSmallMarginEnd"
+                                    />
+                                </m:VBox>
+                            </m:Panel>
+
+                            <!-- Bloc : Saisie manuelle de la requête -->
+                            <m:Panel
+                                headerText="Saisie manuelle de la requête"
+                                expandable="true"
+                                expanded="false"
+                                class=""
+                            >
+                                <m:VBox class="sapUiSmallMargin">
+                                    <m:TextArea
+                                        rows="6"
+                                        width="100%"
+                                        placeholder="Écrire une requête SQL ici..."
+                                    />
+                                    <m:Button
+                                        text="Exécuter"
+                                        icon="sap-icon://play"
+                                        class="sapUiSmallMarginTop"
+                                        type="Emphasized"
+                                    />
+                                </m:VBox>
+                            </m:Panel>
+                        </m:VBox>
+                    </m:HBox>
+                </m:VBox>
+            </m:HBox>
+        </m:Page>
+    </m:App>
+</mvc:View>

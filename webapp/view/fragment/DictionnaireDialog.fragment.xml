@@ -1,0 +1,84 @@
+<core:FragmentDefinition
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+    xmlns:table="sap.ui.table"
+>
+    <Dialog
+        id="dictionaryDialog"
+        title="Dictionnaire de données"
+        class="sapUiContentPadding"
+        contentWidth="80%"
+        contentHeight="60%"
+        resizable="true"
+        draggable="true"
+    >
+        <!-- Sélecteur d’univers -->
+        <VBox>
+            <Select
+                id="universSelect"
+                items="{/universList}"
+                selectedKey="{/selectedUnivers}"
+                change=".onUniversChange"
+            >
+                <core:Item
+                    key="{key}"
+                    text="{text}"
+                />
+            </Select>
+        </VBox>
+
+        <SearchField
+            width="100%"
+            placeholder="Rechercher un champ ou une table..."
+            liveChange=".onSearchDictionary"
+        />
+
+        <!-- Table pour les données du dictionnaire -->
+        <Table
+            id="dictionaryTable"
+            growing="true"
+            growingScrollToLoad="true"
+            items="{/dictionaryFilteredData}"
+        >
+            <columns>
+                <Column>
+                    <Text text="Table" />
+                </Column>
+                <Column>
+                    <Text text="Champs" />
+                </Column>
+                <Column>
+                    <Text text="Champs explicites" />
+                </Column>
+                <Column>
+                    <Text text="Définition fonctionnelle" />
+                </Column>
+                <Column>
+                    <Text text="Définition fonctionnelle (En)" />
+                </Column>
+                <Column>
+                    <Text text="Indices de confiance" />
+                </Column>
+            </columns>
+            <items>
+                <ColumnListItem>
+                    <cells>
+                        <Text text="{table}" />
+                        <Text text="{name}" />
+                        <Text text="{explicit_column}" />
+                        <Text text="{description}" />
+                        <Text text="{source}" />
+                        <Text text="{type}" />
+                    </cells>
+                </ColumnListItem>
+            </items>
+        </Table>
+
+        <endButton>
+            <Button
+                text="Fermer"
+                press=".onCloseDictionary"
+            />
+        </endButton>
+    </Dialog>
+</core:FragmentDefinition>
