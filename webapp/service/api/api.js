@@ -86,7 +86,42 @@ sap.ui.define([], function () {
         })
       });
       return _handleResponse(response);
+    },
+
+    renderSelectCheckboxes: function (aColumns) {
+      const oVBox = this.byId("selectColumnsDynamic");
+      oVBox.removeAllItems();
+    
+      const oModel = this.getView().getModel();
+      const aSelected = []; // ou récupère la dernière sélection
+    
+      aColumns.forEach((col) => {
+        const oCheckBox = new sap.m.CheckBox({
+          text: col,
+          selected: true,
+          select: (oEvent) => {
+            const bChecked = oEvent.getParameter("selected");
+            const sText = oEvent.getSource().getText();
+    
+            let aCurrent = oModel.getProperty("/selectedColumns") || [];
+    
+            if (bChecked) {
+              aCurrent.push(sText);
+            } else {
+              aCurrent = aCurrent.filter((c) => c !== sText);
+            }
+    
+            oModel.setProperty("/selectedColumns", aCurrent);
+          }
+        });
+    
+        oVBox.addItem(oCheckBox);
+        aSelected.push(col);
+      });
+    
+      oModel.setProperty("/selectedColumns", aSelected);
     }
+    
 
 
     // D'autres endpoints peuvent être ajoutés ici

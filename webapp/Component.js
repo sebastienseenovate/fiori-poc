@@ -12,9 +12,10 @@ sap.ui.define([
 
     init: function () {
       UIComponent.prototype.init.apply(this, arguments);
+      jQuery.sap.includeStyleSheet("css/style.css");
       this.getRouter().initialize();
 
-      // 🔥 Forcer le plein écran après que tout soit rendu
+      // Forcer le plein écran après que tout soit rendu
       this._removeLimitedWidthShell();
     },
 
@@ -26,7 +27,7 @@ sap.ui.define([
           $container.classList.remove("sapUShellApplicationContainerLimitedWidth");
           console.log("[seeql] Shell width limitation removed.");
         }
-      }, 0); // ⏱ Suffisant pour attendre l'injection DOM
+      }, 0); // Suffisant pour attendre l'injection DOM
     }
   });
 });
