@@ -11,14 +11,13 @@ sap.ui.define([
       const oModel = new JSONModel({
         results: [],
         selectedColumns: [],
-        availableColumns: [
-          { key: "grlivarea", text: "GrLivArea" },
-          { key: "totalbsmtsf", text: "TotalBsmtSF" },
-          { key: "saletype", text: "SaleType" }
-        ],
+        availableColumns: [],
         universList: [],
         selectedUnivers: "",
-        dictionaryData: [] // 👈 ici
+        dictionaryData: [],
+        dataTitle: "Données issues de la requête",
+        fromTable: ""
+
       });
       this.getView().setModel(oModel);
 
@@ -54,12 +53,12 @@ sap.ui.define([
       const oModel = oView.getModel();
       const sQuestion = this.byId("questionInput").getValue();
       const sUnivers = oModel.getProperty("/selectedUnivers");
-    
+
       if (!sQuestion || !sUnivers) {
         MessageToast.show("Veuillez poser une question et choisir un univers.");
         return;
       }
-    
+
       try {
         const responseMain = await ApiService.generateSQL({
           question: sQuestion,
@@ -67,41 +66,94 @@ sap.ui.define([
           question_translated: false,
           columns: []
         });
-    
+
         const sSQL = responseMain.request_generated;
         const aRows = responseMain.dataframe || [];
-    
+
         this.byId("sqlOutput").setText(sSQL);
         this.byId("responseSection").setVisible(true);
-    
-        // Sauvegarde les lignes complètes
+
+        // 🔍 Extraction du nom de la table
+        const sTable = sSQL.includes("FROM")
+          ? sSQL.split(/FROM/i)[1].trim().split(/\s|;|\n/)[0]
+          : "immo";
+        oModel.setProperty("/fromTable", sTable);
+
+        // 🔄 Titre + résultats
+        oModel.setProperty("/dataTitle", `Données issues de la requête (${aRows.length} lignes)`);
         oModel.setProperty("/fullResults", aRows);
         oModel.setProperty("/resultsPage", 1);
-    
+
         const aColNames = aRows.length > 0 ? Object.keys(aRows[0]) : [];
+
+        // 🔍 Colonnes détectées dans le SELECT
+        const sSelectClause = sSQL.split(/FROM/i)[0];
+        const aSelectedCols = aColNames.filter((col) =>
+          new RegExp(`\\b${col}\\b`, "i").test(sSelectClause)
+        );
+
+        // 📌 Mise à jour du modèle pour MultiComboBox
+        const aAvailableColumns = aColNames.map((col) => ({ key: col, text: col }));
+        oModel.setProperty("/availableColumns", aAvailableColumns);
+        oModel.setProperty("/selectedColumns", aSelectedCols);
+
+        // 🧱 Construction de la table
         const oTable = this.byId("resultTable");
-    
         oTable.removeAllColumns();
         aColNames.forEach((col) => {
           oTable.addColumn(new sap.m.Column({
             header: new sap.m.Text({ text: col })
           }));
         });
-    
-        // Charge les 10 premières lignes
+
         const aFirstRows = aRows.slice(0, 10).map(row => {
           const aCells = aColNames.map(key => new sap.m.Text({ text: row[key] }));
           return new sap.m.ColumnListItem({ cells: aCells });
         });
-    
+
         oTable.removeAllItems();
         aFirstRows.forEach(item => oTable.addItem(item));
-    
         this.byId("resultSection").setVisible(true);
-    
+
+        // 🆕 Ajout dynamique des checkboxes dans le VBox
+        const responseSelect = await fetch("/api/extract_select_columns", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sql_request: sSQL, table: sTable })
+        });
+
+        const dataSelect = await responseSelect.json();
+        const aSelectCols = (dataSelect.list_col || []).map(c => c.idColonne);
+        const oVBox = oView.byId("selectColumnsDynamic");
+
+        if (oVBox) {
+          oVBox.removeAllItems();
+
+          aSelectCols.forEach((col) => {
+            const oCheckBox = new sap.m.CheckBox({
+              text: col,
+              selected: true,
+              select: function (oEvent) {
+                const bSelected = oEvent.getParameter("selected");
+                let aCurrent = oModel.getProperty("/selectedColumns") || [];
+
+                if (bSelected && !aCurrent.includes(col)) {
+                  aCurrent.push(col);
+                } else if (!bSelected) {
+                  aCurrent = aCurrent.filter(c => c !== col);
+                }
+
+                oModel.setProperty("/selectedColumns", aCurrent);
+              }
+            });
+
+            oVBox.addItem(oCheckBox);
+          });
+        }
+
       } catch (err) {
         MessageToast.show("Erreur lors de la génération de la requête.");
-        console.error("Erreur API /main_dev :", err);
+        console.error("Erreur API /main_dev :", err.message || err);
       }
     },
 
@@ -109,22 +161,22 @@ sap.ui.define([
       const oModel = this.getView().getModel();
       const aFull = oModel.getProperty("/fullResults") || [];
       const iPage = oModel.getProperty("/resultsPage") || 1;
-    
+
       const iNext = iPage + 1;
       const aColNames = aFull.length > 0 ? Object.keys(aFull[0]) : [];
       const oTable = this.byId("resultTable");
-    
+
       const aNextSlice = aFull.slice(iPage * 10, iNext * 10);
-    
+
       const aItems = aNextSlice.map(row => {
         const aCells = aColNames.map(key => new sap.m.Text({ text: row[key] }));
         return new sap.m.ColumnListItem({ cells: aCells });
       });
-    
+
       aItems.forEach(item => oTable.addItem(item));
       oModel.setProperty("/resultsPage", iNext);
     },
-    
+
     onModeChange: function (oEvent) {
       const bAdvanced = oEvent.getParameter("state");
       const oLeft = this.byId("leftColumn");
@@ -141,29 +193,63 @@ sap.ui.define([
       }
     },
 
-    onExecute: function () {
-      const aCols = this.getView().getModel().getProperty("/selectedColumns");
+    onExecute: async function () {
+      const oView = this.getView();
+      const oModel = oView.getModel();
+      const aCols = oModel.getProperty("/selectedColumns") || [];
+      const sUnivers = oModel.getProperty("/selectedUnivers");
+      const sQuestion = this.byId("questionInput").getValue();
 
-      if (!aCols.length) {
-        MessageToast.show("Veuillez sélectionner au moins une colonne.");
+      if (!aCols.length || !sQuestion || !sUnivers) {
+        MessageToast.show("Veuillez saisir une question et sélectionner au moins une colonne.");
         return;
       }
 
-      const sSQL = `SELECT\n  ${aCols.join(", ")}\nFROM\n  immo`;
-      this.byId("sqlOutput").setText(sSQL);
-      this.byId("responseSection").setVisible(true);
+      try {
+        const responseMain = await ApiService.generateSQL({
+          question: sQuestion,
+          univers: sUnivers,
+          question_translated: true, // 🧠 on force le mode colonne
+          columns: aCols
+        });
 
-      const aResults = [
-        { value: "854" },
-        { value: "0" },
-        { value: "866" },
-        { value: "961" },
-        { value: "1053" }
-      ];
+        const sSQL = responseMain.request_generated;
+        const aRows = responseMain.dataframe || [];
 
-      this.getView().getModel().setProperty("/results", aResults);
-      this.byId("resultSection").setVisible(true);
+        this.byId("sqlOutput").setText(sSQL);
+        this.byId("responseSection").setVisible(true);
+
+        // 🔁 Mise à jour table name et titre
+        const sTable = sSQL.includes("FROM")
+          ? sSQL.split(/FROM/i)[1].trim().split(/\s|;|\n/)[0]
+          : "immo";
+        oModel.setProperty("/fromTable", sTable);
+        oModel.setProperty("/dataTitle", `Données issues de la requête (${aRows.length} lignes)`);
+
+        const aColNames = aRows.length ? Object.keys(aRows[0]) : [];
+        const oTable = this.byId("resultTable");
+        oTable.removeAllColumns();
+        aColNames.forEach((col) => {
+          oTable.addColumn(new sap.m.Column({ header: new sap.m.Text({ text: col }) }));
+        });
+
+        oTable.removeAllItems();
+        const aItems = aRows.slice(0, 10).map(row => {
+          const aCells = aColNames.map(key => new sap.m.Text({ text: row[key] }));
+          return new sap.m.ColumnListItem({ cells: aCells });
+        });
+        aItems.forEach(item => oTable.addItem(item));
+
+        oModel.setProperty("/fullResults", aRows);
+        oModel.setProperty("/resultsPage", 1);
+        this.byId("resultSection").setVisible(true);
+
+      } catch (err) {
+        MessageToast.show("Erreur lors de l'exécution de la requête.");
+        console.error("Erreur API /main-dev :", err.message || err);
+      }
     },
+
     onOpenDictionary: function () {
       if (!this._oDialog) {
         this._oDialog = sap.ui.xmlfragment("com.seeql.view.fragment.DictionnaireDialog", this);
@@ -255,7 +341,75 @@ sap.ui.define([
 
       // Mise à jour d'un nouveau tableau filtré
       oModel.setProperty("/dictionaryFilteredData", sQuery ? aFiltered : aAllData);
+    },
+
+    onExecuteManualQuery: async function () {
+      const oView = this.getView();
+      const oModel = oView.getModel();
+
+      const sQuestion = this.byId("questionInput").getValue();
+      const sUnivers = oModel.getProperty("/selectedUnivers");
+      const aSelectedColumns = oModel.getProperty("/selectedColumns") || [];
+
+      if (!sQuestion || !sUnivers || !aSelectedColumns.length) {
+        MessageToast.show("Veuillez poser une question, choisir un univers et sélectionner des colonnes.");
+        return;
+      }
+
+      try {
+        // ✅ Génération de la requête via main-dev
+        const responseMain = await ApiService.generateSQL({
+          question: sQuestion,
+          univers: sUnivers,
+          question_translated: true, // on force le mode colonne
+          columns: aSelectedColumns
+        });
+
+        const sSQL = responseMain.request_generated;
+        const aRows = responseMain.dataframe || [];
+
+        // 🔄 Affiche la requête SQL générée
+        this.byId("sqlOutput").setText(sSQL);
+        this.byId("responseSection").setVisible(true);
+
+        // 🔍 Extraction du nom de la table
+        const sTable = sSQL.includes("FROM")
+          ? sSQL.split(/FROM/i)[1].trim().split(/\s|;|\n/)[0]
+          : "immo";
+        oModel.setProperty("/fromTable", sTable);
+
+        // 🔄 Mise à jour du titre
+        oModel.setProperty("/dataTitle", `Résultats manuels (${aRows.length} lignes)`);
+
+        // 🔄 Construction du tableau
+        const oTable = this.byId("resultTable");
+        const aColNames = aRows.length ? Object.keys(aRows[0]) : [];
+
+        oTable.removeAllColumns();
+        aColNames.forEach((col) => {
+          oTable.addColumn(new sap.m.Column({
+            header: new sap.m.Text({ text: col })
+          }));
+        });
+
+        oTable.removeAllItems();
+        const aItems = aRows.slice(0, 10).map(row => {
+          const aCells = aColNames.map(key => new sap.m.Text({ text: row[key] }));
+          return new sap.m.ColumnListItem({ cells: aCells });
+        });
+        aItems.forEach(item => oTable.addItem(item));
+
+        oModel.setProperty("/fullResults", aRows);
+        oModel.setProperty("/resultsPage", 1);
+        this.byId("resultSection").setVisible(true);
+
+      } catch (err) {
+        MessageToast.show("Erreur lors de la régénération de la requête.");
+        console.error("Erreur API /main-dev :", err.message || err);
+      }
     }
+
+
   });
 });
 

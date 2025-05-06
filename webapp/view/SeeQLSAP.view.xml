@@ -140,7 +140,7 @@
                                 class="sapUiSmallMarginTop resultTableContainer "
                             >
                                 <m:Title
-                                    text="Données issues de la requête (5 lignes)"
+                                    text="{/dataTitle}"
                                     level="H5"
                                 />
                                 <m:Table
@@ -213,12 +213,13 @@
                                         class="sapUiTinyMarginTop sapUiTinyMarginBottom"
                                     />
                                     <m:Text
-                                        text="immo"
+                                        text="{/fromTable}"
                                         class="sapUiTinyMarginBottom sapUiSmallMarginBegin"
                                     />
 
                                     <m:Button
                                         text="Exécuter"
+                                        icon="sap-icon://play"
                                         type="Emphasized"
                                         press="onExecute"
                                         class="sapUiTinyMarginTop sapUiSmallMarginEnd"
@@ -233,17 +234,26 @@
                                 expanded="false"
                                 class=""
                             >
-                                <m:VBox class="sapUiSmallMargin">
-                                    <m:TextArea
-                                        rows="6"
-                                        width="100%"
-                                        placeholder="Écrire une requête SQL ici..."
-                                    />
+                                <m:VBox class="">
+
+                                    <!-- Panel des colonnes détectées -->
+                                    <m:Panel
+                                        expandable="false"
+                                        expanded="true"
+                                        class="sapUiTinyMarginTop"
+                                    >
+                                        <m:VBox
+                                            id="selectColumnsDynamic"
+                                            class="sapUiSmallMargin"
+                                        />
+                                    </m:Panel>
+                                    <!-- Bouton d'exécution -->
                                     <m:Button
-                                        text="Exécuter"
+                                        text="Regénérer"
                                         icon="sap-icon://play"
                                         class="sapUiSmallMarginTop"
                                         type="Emphasized"
+                                        press="onExecuteManualQuery"
                                     />
                                 </m:VBox>
                             </m:Panel>
