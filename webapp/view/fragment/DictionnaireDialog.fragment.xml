@@ -33,7 +33,7 @@
             liveChange=".onSearchDictionary"
         />
 
-        <!-- Table pour les données du dictionnaire -->
+        <!-- données du dictionnaire -->
         <Table
             id="dictionaryTable"
             growing="true"
