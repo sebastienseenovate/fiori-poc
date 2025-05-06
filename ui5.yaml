@@ -42,3 +42,13 @@ server:
       afterMiddleware: fiori-tools-preview
       configuration:
         baseUri: "https://backend.seesql.seenovate.com/api"
+
+builder:
+  customTasks:
+    - name: ui5-tooling-modules-task
+      afterTask: replaceVersion
+      configuration:
+        excludes:
+          - "sap/ui/support/**"
+          - "sap/ui/dt/**"
+          - "sap/ui/integration/designtime/**"

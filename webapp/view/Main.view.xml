@@ -1,5 +1,4 @@
-<mvc:View
-  controllerName="com.seeql.controller.Main"
+<mvc:View controllerName="com.seeql.controller.Main"
   xmlns:mvc="sap.ui.core.mvc"
   xmlns="sap.m">
 
@@ -9,24 +8,14 @@
         <content>
 
           <!-- GenericTile à la place du bouton -->
-          <GenericTile
-            class="sapUiTinyMarginBegin sapUiTinyMarginTop tileLayout"
-            header="Voir seeql"
-            subheader="Application IFrame"
-            press="onPressIframe"
-            frameType="OneByHalf">
+          <GenericTile class="sapUiTinyMarginBegin sapUiTinyMarginTop tileLayout" header="Voir seeql" subheader="Application IFrame" press="onPressIframe" frameType="OneByHalf">
 
             <TileContent footer="Cliquer pour ouvrir">
               <!-- Optionnel : ajouter une info visuelle -->
             </TileContent>
           </GenericTile>
 
-          <GenericTile
-            class="sapUiTinyMarginBegin sapUiTinyMarginTop tileLayout"
-            header="Voir seeql-SAPUI5"
-            subheader="Application SAPUI5"
-            press="onPressseeqlSAP"
-            frameType="OneByHalf">
+          <GenericTile class="sapUiTinyMarginBegin sapUiTinyMarginTop tileLayout" header="Voir seeql-SAPUI5" subheader="Application SAPUI5" press="onPressseeqlSAP" frameType="OneByHalf">
 
             <TileContent footer="Cliquer pour ouvrir">
               <!-- Optionnel : ajouter une info visuelle -->

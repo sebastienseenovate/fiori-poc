@@ -16,7 +16,8 @@
     "@sap/ux-ui5-tooling": "1",
     "@ui5/cli": "^3.0.0",
     "rimraf": "3.0.2",
-    "ui5-middleware-simpleproxy": "^3.4.1"
+    "ui5-middleware-simpleproxy": "^3.4.1",
+    "ui5-tooling-modules": "^3.25.1"
   },
   "sapuxLayer": "CUSTOMER_BASE",
   "description": "",
